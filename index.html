@@ -6,6 +6,16 @@
     <title>카드 뒤집기 게임</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Vercel 환경 변수 주입 (빌드 시 build.js가 이 부분을 교체합니다) -->
+    <script>
+        // 기본값: 로컬 개발용 또는 환경 변수가 주입되지 않은 경우
+        if (typeof window.SUPABASE_URL === 'undefined') {
+            window.SUPABASE_URL = '';
+        }
+        if (typeof window.SUPABASE_ANON_KEY === 'undefined') {
+            window.SUPABASE_ANON_KEY = '';
+        }
+    </script>
 </head>
 <body>
     <!-- 이름 입력 모달 -->

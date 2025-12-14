@@ -178,13 +178,13 @@ function flipCard(card) {
     // 뒤집기 애니메이션 클래스 추가
     cardElement.classList.add('flipping');
     
-    // 애니메이션 완료 후 flipped 클래스 추가
+    // 애니메이션 완료 후 flipped 클래스 추가 (빠르게)
     setTimeout(() => {
         cardElement.classList.remove('flipping');
         cardElement.classList.add('flipped');
         // transform 명시적으로 설정 (인라인 스타일 제거하여 CSS가 적용되도록)
         cardElement.style.transform = '';
-    }, 500);
+    }, 100);
 }
 
 // 카드 되돌리기
@@ -293,14 +293,98 @@ function createConfetti(cardElement) {
     }
 }
 
+// 매칭 성공 효과음
+function playMatchSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const duration = 0.2;
+        const sampleRate = audioContext.sampleRate;
+        const frameCount = sampleRate * duration;
+        const buffer = audioContext.createBuffer(1, frameCount, sampleRate);
+        const channelData = buffer.getChannelData(0);
+        
+        // 성공음: 상승하는 톤
+        const frequencies = [400, 600, 800];
+        
+        for (let i = 0; i < frameCount; i++) {
+            let sample = 0;
+            const t = i / sampleRate;
+            
+            frequencies.forEach((freq, index) => {
+                const amplitude = Math.exp(-t * 8) * (1 - index * 0.2);
+                sample += Math.sin(2 * Math.PI * freq * t * (1 + t * 2)) * amplitude;
+            });
+            
+            channelData[i] = sample * 0.4;
+        }
+        
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        
+        const gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        source.start();
+    } catch (error) {
+        console.warn('효과음 재생 실패:', error);
+    }
+}
+
+// 매칭 실패 효과음
+function playMismatchSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const duration = 0.15;
+        const sampleRate = audioContext.sampleRate;
+        const frameCount = sampleRate * duration;
+        const buffer = audioContext.createBuffer(1, frameCount, sampleRate);
+        const channelData = buffer.getChannelData(0);
+        
+        // 실패음: 하강하는 톤
+        const frequencies = [300, 250, 200];
+        
+        for (let i = 0; i < frameCount; i++) {
+            let sample = 0;
+            const t = i / sampleRate;
+            
+            frequencies.forEach((freq, index) => {
+                const amplitude = Math.exp(-t * 10) * (1 - index * 0.2);
+                sample += Math.sin(2 * Math.PI * freq * t * (1 - t * 1.5)) * amplitude;
+            });
+            
+            channelData[i] = sample * 0.3;
+        }
+        
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        
+        const gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        source.start();
+    } catch (error) {
+        console.warn('효과음 재생 실패:', error);
+    }
+}
+
 // 매칭 확인
 function checkMatch() {
     gameState.isLocked = true;
     
     const [card1, card2] = gameState.flippedCards;
     
+    // 500ms 딜레이 후 확인
     setTimeout(() => {
         if (card1.symbol === card2.symbol) {
+            // 매칭 성공 효과음
+            playMatchSound();
+            
             // 매칭 성공
             card1.isMatched = true;
             card2.isMatched = true;
@@ -317,14 +401,6 @@ function checkMatch() {
             card1.element.style.transform = 'rotateY(180deg)';
             card2.element.style.transform = 'rotateY(180deg)';
             
-            // 파티클 효과
-            createParticles(card1.element);
-            createParticles(card2.element);
-            
-            // 팡파레 효과
-            createConfetti(card1.element);
-            createConfetti(card2.element);
-            
             gameState.matchedPairs++;
             gameState.flippedCards = [];
             gameState.isLocked = false;
@@ -334,38 +410,38 @@ function checkMatch() {
                 gameWin();
             }
         } else {
+            // 매칭 실패 효과음
+            playMismatchSound();
+            
             // 매칭 실패 - 카드 되돌리기
+            // flipping 클래스 제거
+            card1.element.classList.remove('flipping');
+            card2.element.classList.remove('flipping');
+            
+            // 되돌리기 애니메이션 (빠르게)
+            card1.element.style.transition = 'transform 0.1s linear';
+            card2.element.style.transition = 'transform 0.1s linear';
+            
+            unflipCard(card1);
+            unflipCard(card2);
+            
+            gameState.flippedCards = [];
+            gameState.isLocked = false;
+            
+            // transition 초기화
             setTimeout(() => {
-                // flipping 클래스 제거
-                card1.element.classList.remove('flipping');
-                card2.element.classList.remove('flipping');
-                
-                // 되돌리기 애니메이션
-                card1.element.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-                card2.element.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-                
-                unflipCard(card1);
-                unflipCard(card2);
-                
-                gameState.flippedCards = [];
-                gameState.isLocked = false;
-                
-                // transition 초기화
-                setTimeout(() => {
-                    card1.element.style.transition = '';
-                    card2.element.style.transition = '';
-                }, 300);
-            }, 1000);
+                card1.element.style.transition = '';
+                card2.element.style.transition = '';
+            }, 100);
         }
     }, 500);
 }
 
 // 게임 승리
-async function gameWin() {
+function gameWin() {
     stopTimer();
     document.getElementById('win-message').classList.remove('hidden');
-    // 이름 입력 모달 표시
-    showNameModal();
+    // 자동으로 모달 표시하지 않음 - 버튼으로 선택 가능
 }
 
 // 타이머 시작
@@ -561,7 +637,7 @@ async function showLeaderboard() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM 로드 완료, 이벤트 리스너 설정 중...');
     
-    // 점수 저장 버튼
+    // 점수 저장 버튼 (모달)
     const saveBtn = document.getElementById('save-score-btn');
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
@@ -570,6 +646,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         console.error('점수 저장 버튼을 찾을 수 없습니다.');
+    }
+    
+    // 점수 저장 버튼 (승리 메시지)
+    const saveBtnWin = document.getElementById('save-score-btn-win');
+    if (saveBtnWin) {
+        saveBtnWin.addEventListener('click', () => {
+            console.log('승리 메시지 점수 저장 버튼 클릭');
+            showNameModal();
+        });
     }
     
     // 이름 입력 필드에서 Enter 키로 점수 저장

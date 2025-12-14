@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카드 뒤집기 게임</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- 이름 입력 모달 -->
+    <div id="name-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>점수 저장</h2>
+            <p>점수를 저장할 이름을 입력해주세요.</p>
+            <input type="text" id="player-name-input" placeholder="이름을 입력하세요" maxlength="20" autofocus>
+            <button id="save-score-btn" class="btn">점수 저장</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>🎮 카드 뒤집기 게임</h1>
+        
+        <div class="game-info">
+            <div class="info-item">
+                <span class="label">플레이어:</span>
+                <span id="player-name-display">-</span>
+            </div>
+            <div class="info-item">
+                <span class="label">이동 횟수:</span>
+                <span id="moves">0</span>
+            </div>
+            <div class="info-item">
+                <span class="label">시간:</span>
+                <span id="timer">0</span>초
+            </div>
+            <button id="reset-btn" class="btn">새 게임</button>
+        </div>
+        
+        <div id="game-board" class="game-board"></div>
+        
+        <div id="win-message" class="win-message hidden">
+            <h2>🎉 축하합니다!</h2>
+            <p>모든 카드를 맞췄습니다!</p>
+        </div>
+        
+        <button id="leaderboard-btn" class="btn btn-secondary">리더보드 보기</button>
+        
+        <div id="leaderboard" class="leaderboard hidden"></div>
+    </div>
+    
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

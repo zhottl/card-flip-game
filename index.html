@@ -16,6 +16,40 @@
             window.SUPABASE_ANON_KEY = '';
         }
     </script>
+    <!-- Supabase 설정 (인라인으로 포함) -->
+    <script>
+        // Supabase 설정
+        // Vercel 환경 변수 또는 로컬 설정 파일에서 값을 가져옵니다
+        (function() {
+            // window 객체에서 환경 변수 가져오기 (빌드 시 주입됨)
+            const envUrl = typeof window !== 'undefined' ? window.SUPABASE_URL : '';
+            const envKey = typeof window !== 'undefined' ? window.SUPABASE_ANON_KEY : '';
+            
+            // 기본값 (로컬 개발용)
+            const defaultUrl = 'https://jtmsuvpqxphytjurqase.supabase.co';
+            const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0bXN1dnBxeHBoeXRqdXJxYXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjI3MzYsImV4cCI6MjA4MTIzODczNn0.A75RfWTkmjVQUofBAcR18eYccduYSl8ROV4Cx2kgTNA';
+            
+            const SUPABASE_CONFIG = {
+                url: envUrl || defaultUrl,
+                anonKey: envKey || defaultKey
+            };
+            
+            // 디버깅 정보 (프로덕션에서는 제거 가능)
+            console.log('🔧 Supabase 설정:', {
+                url: SUPABASE_CONFIG.url ? '✅ 설정됨' : '❌ 없음',
+                key: SUPABASE_CONFIG.anonKey ? '✅ 설정됨' : '❌ 없음',
+                source: envUrl ? '환경 변수' : '기본값'
+            });
+            
+            // Supabase 클라이언트 초기화
+            if (typeof supabase !== 'undefined') {
+                window.supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                console.log('✅ Supabase 클라이언트 초기화 완료');
+            } else {
+                console.error('❌ Supabase 라이브러리가 로드되지 않았습니다.');
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- 이름 입력 모달 -->
@@ -60,7 +94,6 @@
         <div id="leaderboard" class="leaderboard hidden"></div>
     </div>
     
-    <script src="supabase-config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

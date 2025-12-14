@@ -534,17 +534,27 @@ async function saveScore() {
     
     // Supabase 클라이언트 확인
     if (typeof supabase === 'undefined') {
-        console.error('Supabase 라이브러리가 로드되지 않았습니다.');
+        console.error('❌ Supabase 라이브러리가 로드되지 않았습니다.');
+        alert('Supabase 라이브러리를 불러올 수 없습니다. 페이지를 새로고침해주세요.');
         return;
     }
     
-    if (typeof supabaseClient === 'undefined') {
-        console.error('Supabase 클라이언트가 초기화되지 않았습니다.');
+    // window 객체에서 클라이언트 가져오기 (supabase-config.js에서 설정됨)
+    const client = window.supabaseClient || supabaseClient;
+    
+    if (!client) {
+        console.error('❌ Supabase 클라이언트가 초기화되지 않았습니다.');
+        console.error('현재 상태:', {
+            supabase: typeof supabase,
+            supabaseClient: typeof supabaseClient,
+            windowSupabaseClient: typeof window.supabaseClient
+        });
+        alert('Supabase 연결에 실패했습니다. 환경 설정을 확인해주세요.');
         return;
     }
     
     try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
             .from('card_flip_scores')
             .insert([
                 {
@@ -571,17 +581,20 @@ async function saveScore() {
 async function loadTopScores(limit = 10) {
     // Supabase 클라이언트 확인
     if (typeof supabase === 'undefined') {
-        console.error('Supabase 라이브러리가 로드되지 않았습니다.');
+        console.error('❌ Supabase 라이브러리가 로드되지 않았습니다.');
         return null;
     }
     
-    if (typeof supabaseClient === 'undefined') {
-        console.error('Supabase 클라이언트가 초기화되지 않았습니다.');
+    // window 객체에서 클라이언트 가져오기
+    const client = window.supabaseClient || supabaseClient;
+    
+    if (!client) {
+        console.error('❌ Supabase 클라이언트가 초기화되지 않았습니다.');
         return null;
     }
     
     try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
             .from('card_flip_scores')
             .select('*')
             .order('score', { ascending: true })
@@ -605,18 +618,26 @@ async function loadTopScores(limit = 10) {
 // 리더보드 표시
 async function showLeaderboard() {
     const leaderboardDiv = document.getElementById('leaderboard');
+    if (!leaderboardDiv) {
+        console.error('리더보드 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    // 항상 최신 데이터를 가져오기 위해 로딩 상태 표시
     leaderboardDiv.classList.remove('hidden');
     leaderboardDiv.innerHTML = '<h3>리더보드 로딩 중...</h3>';
     
+    // 약간의 지연을 두어 UI 업데이트를 보장
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 최신 점수 데이터 가져오기
     const scores = await loadTopScores(10);
     
     if (scores && scores.length > 0) {
         let html = '<h3>🏆 상위 10명</h3><table><tr><th>순위</th><th>이름</th><th>이동</th><th>시간</th><th>점수</th></tr>';
         scores.forEach((score, index) => {
-            // 현재 플레이어 강조 표시
-            const isCurrentPlayer = score.player_name === gameState.playerName && 
-                                   score.moves === gameState.moves && 
-                                   score.time_taken === gameState.timer;
+            // 현재 플레이어 강조 표시 (최근 저장된 점수와 비교)
+            const isCurrentPlayer = score.player_name === gameState.playerName;
             const rowClass = isCurrentPlayer ? 'class="current-player"' : '';
             html += `<tr ${rowClass}>
                 <td>${index + 1}</td>
@@ -679,7 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 리더보드 버튼
     const leaderboardBtn = document.getElementById('leaderboard-btn');
     if (leaderboardBtn) {
-        leaderboardBtn.addEventListener('click', showLeaderboard);
+        leaderboardBtn.addEventListener('click', async () => {
+            // 항상 최신 데이터를 가져오기 위해 리더보드 새로고침
+            await showLeaderboard();
+        });
     }
     
     // 게임 바로 시작 (모달 없이)
